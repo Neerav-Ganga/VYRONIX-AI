@@ -1,0 +1,8 @@
+{
+  "name": "VYRONIX AI",
+  "description": "Revolutionary AI-powered Student Productivity Ecosystem. An intelligent AI Operating System for academic life synchronization, focus optimization, and breakthrough performance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

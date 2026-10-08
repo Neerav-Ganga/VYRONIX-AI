@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores student personal info, preferences and productivity metrics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "learningStyle": { "type": "string", "enum": ["visual", "auditory", "reading", "kinesthetic"] },
+        "dailyFocusGoal": { "type": "number" },
+        "currentStreak": { "type": "number" },
+        "totalFocusHours": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "An academic task or assignment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "subject": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed", "overdue"] },
+        "aiBreakdown": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "estimatedMinutes": { "type": "number" },
+        "actualMinutes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "subject", "deadline"]
+    },
+    "FocusSession": {
+      "title": "Focus Session",
+      "description": "Recording a deep work session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number" },
+        "mode": { "type": "string" },
+        "productivityScore": { "type": "number" },
+        "distractions": { "type": "number" }
+      },
+      "required": ["userId", "startTime"]
+    },
+    "DailyGoal": {
+      "title": "Daily Goal",
+      "description": "Primary academic objective for a student for the day",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "category": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "targetDate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "completed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User specific tasks"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "FocusSession",
+      "description": "User focus sessions"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "DailyGoal",
+      "description": "User daily academic goals"
+    }
+  }
+}

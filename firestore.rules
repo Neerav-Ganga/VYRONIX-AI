@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isGuest(userId) {
+      return userId == "guest-visionary-uid";
+    }
+
+    function isAuthorized(userId) {
+      return isOwner(userId) || (isSignedIn() && isGuest(userId));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Helpers
+    function isValidUserProfile(data, userId) {
+      return (data.uid == request.auth.uid || (isGuest(userId) && data.uid == "guest-visionary-uid"))
+        && data.email is string && data.email.size() <= 200
+        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 100))
+        && data.keys().hasAll(['uid', 'email']);
+    }
+
+    function isValidTask(data, userId) {
+      return (data.userId == request.auth.uid || (isGuest(userId) && data.userId == "guest-visionary-uid"))
+        && data.title is string && data.title.size() <= 200
+        && data.subject is string && data.subject.size() <= 100
+        && (data.description == null || (data.description is string && data.description.size() <= 2000))
+        && data.status in ['pending', 'in-progress', 'completed', 'overdue']
+        && data.keys().hasAll(['userId', 'title', 'subject', 'deadline', 'status']);
+    }
+
+    function isValidFocusSession(data, userId) {
+      return (data.userId == request.auth.uid || (isGuest(userId) && data.userId == "guest-visionary-uid"))
+        && data.startTime is timestamp
+        && data.keys().hasAll(['userId', 'startTime']);
+    }
+
+    function isValidDailyGoal(data, userId) {
+      return (data.userId == request.auth.uid || (isGuest(userId) && data.userId == "guest-visionary-uid"))
+        && data.title is string && data.title.size() <= 300
+        && data.completed is bool
+        && (data.category == null || (data.category is string && data.category.size() <= 100))
+        && (data.priority == null || data.priority in ['low', 'medium', 'high'])
+        && data.keys().hasAll(['userId', 'title', 'completed']);
+    }
+
+    // Match Rules
+    match /users/{userId} {
+      allow get: if isAuthorized(userId);
+      allow create: if isAuthorized(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isAuthorized(userId) && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid; // Immutable UID
+      
+      match /tasks/{taskId} {
+        allow list: if isAuthorized(userId);
+        allow get: if isAuthorized(userId);
+        allow create: if isAuthorized(userId) && isValidTask(incoming(), userId);
+        allow update: if isAuthorized(userId) && isValidTask(incoming(), userId)
+          && (incoming().userId == existing().userId);
+        allow delete: if isAuthorized(userId);
+      }
+
+      match /sessions/{sessionId} {
+        allow list: if isAuthorized(userId);
+        allow get: if isAuthorized(userId);
+        allow create: if isAuthorized(userId) && isValidFocusSession(incoming(), userId);
+        allow delete: if isAuthorized(userId);
+      }
+
+      match /goals/{goalId} {
+        allow list: if isAuthorized(userId);
+        allow get: if isAuthorized(userId);
+        allow create: if isAuthorized(userId) && isValidDailyGoal(incoming(), userId);
+        allow update: if isAuthorized(userId) && isValidDailyGoal(incoming(), userId)
+          && (incoming().userId == existing().userId);
+        allow delete: if isAuthorized(userId);
+      }
+    }
+  }
+}
